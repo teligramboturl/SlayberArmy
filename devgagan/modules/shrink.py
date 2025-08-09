@@ -84,7 +84,7 @@ async def token_handler(client, message):
         await message.reply_photo(
             photo=image_url,
             caption=(
-                "𝐇𝐢 👋 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 {user_name}\n\n"
+                "𝐇𝐢 👋 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 {message.from_user.first_name}\n\n"
                 "🥀 ɪ ᴄᴀɴ sᴀᴠᴇ ᴘᴏsᴛs ғʀᴏᴍ ᴄʜᴀɴɴᴇʟs ᴏʀ ɢʀᴏᴜᴘs ᴡʜᴇʀᴇ ғᴏʀᴡᴀʀᴅɪɴɢ ɪs ᴏғғ. ɪ ᴄᴀɴ ᴅᴏᴡɴʟᴏᴀᴅ ᴠɪᴅᴇᴏs/ᴀᴜᴅɪᴏ ғʀᴏᴍ ʏᴛ, ɪɴsᴛᴀ, ... sᴏᴄɪᴀʟ ᴘʟᴀᴛғᴏʀᴍs\n"
                 "🥀 sɪᴍᴘʟʏ sᴇɴᴅ ᴛʜᴇ ᴘᴏsᴛ ʟɪɴᴋ ᴏғ ᴀ ᴘᴜʙʟɪᴄ ᴄʜᴀɴɴᴇʟ. ғᴏʀ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀɴɴᴇʟs, ᴅᴅ /ʟᴏɢɪɴ. sᴇɴᴅ /ʜᴇʟᴘ ᴛᴏ ᴋɴᴏᴡ ᴍᴏʀᴇ..."
             ),
