@@ -1,3 +1,5 @@
+essage.edit_text(terms_text, reply_markup=buttons)
+ 
 # ---------------------------------------------------
 # File Name: start.py
 # Description: A Pyrogram bot for downloading files from Telegram channels or groups 
@@ -193,11 +195,35 @@ async def terms(client, message):
 @app.on_message(filters.command("plan") & filters.private)
 async def plan(client, message):
     plan_text = (
-        "> 💰 **Premium Price**:\n\n Starting from $2 or 200 INR accepted via **__Amazon Gift Card__** (terms and conditions apply).\n"
-        "📥 **Download Limit**: Users can download up to 100,000 files in a single batch command.\n"
-        "🛑 **Batch**: You will get two modes /bulk and /batch.\n"
-        "   - Users are advised to wait for the process to automatically cancel before proceeding with any downloads or uploads.\n\n"
-        "📜 **Terms and Conditions**: For further details and complete terms and conditions, please send /terms.\n"
+        "> 💎 UNLOCK THE ULTIMATE PREMIUM EXPERIENCE 💎\n\n"
+    "━━━━━━━━━━━━━━━━━━━\n\n"
+    "⚡ No More Limits – Just Pure Freedom!\n"
+    "Hamare Premium Bot ke saath apni content-saving & sharing ko banaiye super smooth aur powerful.\n\n"
+
+    "🚀 Effortless Saving & Management:\n"
+    "✅ Unlimited Links – Public & Private sources se jitna chahe save karein.\n"
+    "✅ Mega Bulk Mode – Ek saath 10,000+ messages handle karein.\n"
+    "✅ 4GB File Support – Badi files easily handle.\n"
+    "✅ Instant Channel/Group Delivery – Seedha aapke group ya channel me.\n\n"
+
+    "🎨 Complete Customization:\n"
+    "✅ Custom Watermark – Apna brand har file pe.\n"
+    "✅ Caption Control – Add, Remove, Replace instantly.\n"
+    "✅ Premium Thumbnails – Content ko standout banayein.\n"
+    "✅ Smart File Renaming – Organize like a pro.\n\n"
+
+    "🔗 Seamless Integration:\n"
+    "✅ No Invite Links Needed.\n"
+    "✅ Forward from any bot supported.\n"
+    "✅ Works in all group types.\n\n"
+
+    "━━━━━━━━━━━━━━━━━━━\n\n"
+    "🔥 Premium Plans:\n"
+    "💠 1 Month: ₹120 / $2\n"
+    "💠 3 Months: ₹320 / $5\n"
+    "💠 6 Months: ₹620 / $9\n"
+    "💠 12 Months: ₹1120 / $16 – Best Value! 💸\n\n"
+    "📩 Get Premium Now: @MustfeekNo1\n"
     )
      
     buttons = InlineKeyboardMarkup(
@@ -245,4 +271,4 @@ async def see_terms(client, callback_query):
     )
     await callback_query.message.edit_text(terms_text, reply_markup=buttons)
  
- 
+  
