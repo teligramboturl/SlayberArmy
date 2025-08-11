@@ -1,5 +1,5 @@
 # ---------------------------------------------------
-# File Name: main.py
+# File Name: start.py
 # Description: A Pyrogram bot for downloading files from Telegram channels or groups 
 #              and uploading them back to Telegram.
 # Author: Gagan
@@ -12,383 +12,237 @@
 # License: MIT License
 # ---------------------------------------------------
 
-import time
-import random
-import string
-import asyncio
-from pyrogram import filters, Client
+from pyrogram import filters
 from devgagan import app
-from config import API_ID, API_HASH, FREEMIUM_LIMIT, PREMIUM_LIMIT, OWNER_ID
-from devgagan.core.get_func import get_msg
+from config import OWNER_ID
+from devgagan.core.func import subscribe
+import asyncio
 from devgagan.core.func import *
-from devgagan.core.mongo import db
-from devgagan.modules.shrink import is_user_verified
-from pyrogram.errors import FloodWait
-from datetime import datetime, timedelta
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.raw.functions.bots import SetBotInfo
+from pyrogram.raw.types import InputUserSelf
 
-async def generate_random_name(length=8):
-    return ''.join(random.choices(string.ascii_lowercase, k=length))
-
-
-users_loop = {}
-interval_set = {}
-batch_mode = {}
-
-async def process_and_upload_link(userbot, user_id, msg_id, link, retry_count, message):
-    try:
-        await get_msg(userbot, user_id, msg_id, link, retry_count, message)
-        await asyncio.sleep(3.5)
-    finally:
-        pass
-
-
-
-# Function to check if the user can proceed
-async def check_interval(user_id, freecheck):
-    if freecheck != 1 or await is_user_verified(user_id):  # Premium or owner users can always proceed
-        return True, None
-
-    now = datetime.now()
-
-    # Check if the user is on cooldown
-    if user_id in interval_set:
-        cooldown_end = interval_set[user_id]
-        if now < cooldown_end:
-            remaining_time = (cooldown_end - now).seconds // 60
-            return False, f"Please wait {remaining_time} minute(s) before sending another link. Alternatively, purchase premium for instant access.\n\n> Hey 👋 You can use /token to use the bot free for 3 hours without any time limit."
-        else:
-            del interval_set[user_id]  # Cooldown expired, remove user from interval set
-
-    return True, None
-
-async def set_interval(user_id, interval_minutes=5):
-    now = datetime.now()
-    # Set the cooldown interval for the user
-    interval_set[user_id] = now + timedelta(minutes=interval_minutes)
-    
-
-@app.on_message(filters.regex(r'https?://(?:www\.)?t\.me/[^\s]+') & filters.private)
-async def single_link(_, message):
-    join = await subscribe(_, message)
-    if join == 1:
+from pyrogram.types import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
+ 
+@app.on_message(filters.command("set"))
+async def set(_, message):
+    if message.from_user.id not in OWNER_ID:
+        await message.reply("You are not authorized to use this command.")
         return
      
-    user_id = message.chat.id
-    if user_id in batch_mode:
+    await app.set_bot_commands([
+        BotCommand("start", "🚀 Start the bot"),
+        BotCommand("batch", "🫠 Extract in bulk"),
+        BotCommand("login", "🔑 Get into the bot"),
+        BotCommand("logout", "🚪 Get out of the bot"),
+        BotCommand("token", "🎲 Get 3 hours free access"),
+        BotCommand("adl", "👻 Download audio from 30+ sites"),
+        BotCommand("dl", "💀 Download videos from 30+ sites"),
+        BotCommand("freez", "🧊 Remove all expired user"),
+        BotCommand("pay", "₹ Pay now to get subscription"),
+        BotCommand("status", "⟳ Refresh Payment status"),
+        BotCommand("transfer", "💘 Gift premium to others"),
+        BotCommand("myplan", "⌛ Get your plan details"),
+        BotCommand("add", "➕ Add user to premium"),
+        BotCommand("rem", "➖ Remove from premium"),
+        BotCommand("session", "🧵 Generate Pyrogramv2 session"),
+        BotCommand("settings", "⚙️ Personalize things"),
+        BotCommand("stats", "📊 Get stats of the bot"),
+        BotCommand("plan", "🗓️ Check our premium plans"),
+        BotCommand("terms", "🥺 Terms and conditions"),
+        BotCommand("speedtest", "🚅 Speed of server"),
+        BotCommand("get", "🗄️ Get all user IDs"),
+        BotCommand("lock", "🔒 Protect channel from extraction"),
+        BotCommand("gcast", "⚡ Broadcast message to bot users"),
+        BotCommand("help", "❓ If you're a noob, still!"),
+        BotCommand("cancel", "🚫 Cancel batch process")
+    ])
+ 
+    await message.reply("✅ Commands configured successfully!")
+ 
+ 
+ 
+ 
+help_pages = [
+    (
+        "📝 **Bot Commands Overview (1/2)**:\n\n"
+        "1. **/add userID**\n"
+        "> Add user to premium (Owner only)\n\n"
+        "2. **/rem userID**\n"
+        "> Remove user from premium (Owner only)\n\n"
+        "3. **/transfer userID**\n"
+        "> Transfer premium to your beloved major purpose for resellers (Premium members only)\n\n"
+        "4. **/get**\n"
+        "> Get all user IDs (Owner only)\n\n"
+        "5. **/lock**\n"
+        "> Lock channel from extraction (Owner only)\n\n"
+        "6. **/dl link**\n"
+        "> Download videos (Not available in v3 if you are using)\n\n"
+        "7. **/adl link**\n"
+        "> Download audio (Not available in v3 if you are using)\n\n"
+        "8. **/login**\n"
+        "> Log into the bot for private channel access\n\n"
+        "9. **/batch**\n"
+        "> Bulk extraction for posts (After login)\n\n"
+    ),
+    (
+        "📝 **Bot Commands Overview (2/2)**:\n\n"
+        "10. **/logout**\n"
+        "> Logout from the bot\n\n"
+        "11. **/stats**\n"
+        "> Get bot stats\n\n"
+        "12. **/plan**\n"
+        "> Check premium plans\n\n"
+        "13. **/speedtest**\n"
+        "> Test the server speed (not available in v3)\n\n"
+        "14. **/terms**\n"
+        "> Terms and conditions\n\n"
+        "15. **/cancel**\n"
+        "> Cancel ongoing batch process\n\n"
+        "16. **/myplan**\n"
+        "> Get details about your plans\n\n"
+        "17. **/session**\n"
+        "> Generate Pyrogram V2 session\n\n"
+        "18. **/settings**\n"
+        "> 1. SETCHATID : To directly upload in channel or group or user's dm use it with -100[chatID]\n"
+        "> 2. SETRENAME : To add custom rename tag or username of your channels\n"
+        "> 3. CAPTION : To add custom caption\n"
+        "> 4. REPLACEWORDS : Can be used for words in deleted set via REMOVE WORDS\n"
+        "> 5. RESET : To set the things back to default\n\n"
+        "> You can set CUSTOM THUMBNAIL, PDF WATERMARK, VIDEO WATERMARK, SESSION-based login, etc. from settings\n\n"
+        "**__Powered by Slayber__**"
+    )
+]
+ 
+ 
+async def send_or_edit_help_page(_, message, page_number):
+    if page_number < 0 or page_number >= len(help_pages):
         return
-    
-    # Check if the user is already in the loop
-    if users_loop.get(user_id, False):
-        await message.reply(
-            "You already have an ongoing process. Please wait for it to finish or cancel it with /cancel."
-        )
-        return    
-        
-    freecheck = await chk_user(message, user_id)
-    if freecheck == 1 and FREEMIUM_LIMIT == 0 and user_id not in OWNER_ID:
-        await message.reply("Freemium service is currently not available. Upgrade to premium for access.")
-        return
-    
-    # Call the set_interval function to handle the cooldown
-    can_proceed, response_message = await check_interval(user_id, freecheck)
-    if not can_proceed:
-        await message.reply(response_message)
-        return
-        
-    # Add the user to the loop
-    users_loop[user_id] = True
-    link = get_link(message.text) 
-    userbot = None
-    try:
-        join = await subscribe(_, message)
-        if join == 1:
-            users_loop[user_id] = False
-            return
+ 
      
-        
-        msg = await message.reply("Processing...")
-        
-        if 't.me/' in link and 't.me/+' not in link and 't.me/c/' not in link and 't.me/b/' not in link:
-            data = await db.get_data(user_id)
-            if data and data.get("session"):
-                session = data.get("session")
-                try:
-                    device = 'Vivo Y20'
-                    userbot = Client(
-                        ":userbot:",
-                        api_id=API_ID,
-                        api_hash=API_HASH,
-                        device_model=device,
-                        session_string=session
-                    )
-                    await userbot.start()
-                except Exception as e:
-                    userbot = None
-            else:
-                userbot = None
-                
-            await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-            await set_interval(user_id, interval_minutes=5)
-            users_loop[user_id] = False
-            return
-            
-        data = await db.get_data(user_id)
-        
-        if data and data.get("session"):
-            session = data.get("session")
-            try:
-                device = 'Vivo Y20'
-                userbot = Client(":userbot:", api_id=API_ID, api_hash=API_HASH, device_model=device, session_string=session)
-                await userbot.start()                
-            except:
-                users_loop[user_id] = False
-                return await msg.edit_text("Login expired /login again...")
-        else:
-            users_loop[user_id] = False
-            await msg.edit_text("Login in bot first ...")
-            return
-
-        try:
-            if 't.me/+' in link:
-                q = await userbot_join(userbot, link)
-                await msg.edit_text(q)
-            elif 't.me/c/' in link:
-                await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-                await set_interval(user_id, interval_minutes=5)
-            else:
-                await msg.edit_text("Invalid link format.")
-        except Exception as e:
-            await msg.edit_text(f"Link: `{link}`\n\n**Error:** {str(e)}")
-            
-    except FloodWait as fw:
-        await msg.edit_text(f'Try again after {fw.x} seconds due to floodwait from telegram.')
-        
-    except Exception as e:
-        await msg.edit_text(f"Link: `{link}`\n\n**Error:** {str(e)}")
-    finally:
-        if userbot and userbot.is_connected:  # Ensure userbot was initialized and started
-            await userbot.stop()
-        users_loop[user_id] = False  # Remove user from the loop after processing
-
-# New Update
-
-
-@app.on_message(filters.command("batch") & filters.private)
-async def batch_link(_, message):
-    join = await subscribe(_, message)
-    if join == 1:
-        return
+    prev_button = InlineKeyboardButton("◀️ Previous", callback_data=f"help_prev_{page_number}")
+    next_button = InlineKeyboardButton("Next ▶️", callback_data=f"help_next_{page_number}")
+ 
      
-    user_id = message.chat.id
-    # Check if a batch process is already running
-    if users_loop.get(user_id, False):  
-        await app.send_message(
-            message.chat.id,
-            "You already have a batch process running. Please wait for it to complete before starting a new one."
-        )
-        return
-        
-    freecheck = await chk_user(message, user_id)
-    if freecheck == 1 and FREEMIUM_LIMIT == 0 and user_id not in OWNER_ID:
-        await message.reply("Freemium service is currently not available. Upgrade to premium for access.")
-        return
-
-    # Determine user's limits based on their subscription
-    toker = await is_user_verified(user_id)
-    if toker:
-        max_batch_size = (FREEMIUM_LIMIT + 1)
-        freecheck = 0  # Pass
-    else:
-        freecheck = await chk_user(message, user_id)
-        if freecheck == 1:
-            max_batch_size = FREEMIUM_LIMIT  # Limit for free users
-        else:
-            max_batch_size = PREMIUM_LIMIT
-
-    # Loop for start link input
-    attempts = 0
-    while attempts < 3:
-        start = await app.ask(message.chat.id, text="Please send the start link.")
-        start_id = start.text.strip()
-        s = start_id.split("/")[-1]  # Extract the last part of the link
-
-        try:
-            cs = int(s)  # Try to convert the extracted part to an integer
-            break  # Exit loop if conversion is successful
-        except ValueError:
-            attempts += 1
-            if attempts == 3:
-                await app.send_message(message.chat.id, "You have exceeded the maximum number of attempts. Please try again later.")
-                return
-            await app.send_message(message.chat.id, "Invalid link. Please send again ...")
-
-    # Loop for the number of messages input
-    attempts = 0
-    while attempts < 3:
-        num_messages = await app.ask(message.chat.id, text="How many messages do you want to process?")
-        try:
-            cl = int(num_messages.text.strip())  # Try to convert input to an integer
-            if cl <= 0 or cl > max_batch_size:
-                raise ValueError(f"Number of messages must be between 1 and {max_batch_size}.")
-            break  # Exit loop if conversion is successful
-        except ValueError as e:
-            attempts += 1
-            if attempts == 3:
-                await app.send_message(message.chat.id, "You have exceeded the maximum number of attempts. Please try again later.")
-                return
-            await app.send_message(message.chat.id, f"Invalid number: {e}. Please enter a valid number again ...")
-    
-    # Final validation before proceeding
-    can_proceed, response_message = await check_interval(user_id, freecheck)
-    if not can_proceed:
-        await message.reply(response_message)
-        return
-        
- # Create an inline button for the channel link
-    join_button = InlineKeyboardButton("Join Channel", url="https://t.me/Slayber_Bots")
-    keyboard = InlineKeyboardMarkup([[join_button]])
-
-    # Send and Pin message to indicate the batch process has started
-    pin_msg = await app.send_message(
-        user_id,
-        "Batch process started ⚡\n__Processing: 0/{cl}__\n\n**__Powered by Slayber__**",
+    buttons = []
+    if page_number > 0:
+        buttons.append(prev_button)
+    if page_number < len(help_pages) - 1:
+        buttons.append(next_button)
+ 
+     
+    keyboard = InlineKeyboardMarkup([buttons])
+ 
+     
+    await message.delete()
+ 
+     
+    await message.reply(
+        help_pages[page_number],
         reply_markup=keyboard
     )
-    try:
-        await pin_msg.pin()
-    except Exception as e:
-        await pin_msg.pin(both_sides=True)
-    # Start processing links
-    users_loop[user_id] = True
-    try:
-        # FIRST ITERATION: Process t.me/ links without userbot
-        for i in range(cs, cs + cl):
-            if user_id in users_loop and users_loop[user_id]:
-                try:
-                    # Construct the link
-                    x = start_id.split('/')
-                    y = x[:-1]
-                    result = '/'.join(y)
-                    url = f"{result}/{i}"
-                    link = get_link(url)
-                    
-                    # Directly process links like t.me/ (no userbot needed)
-                    if 't.me/' in link and 't.me/b/' not in link and 't.me/c' not in link:
-                        userbot = None
-                        data = await db.get_data(user_id)
-                        if data and data.get("session"):
-                            session = data.get("session")
-                            try:
-                                device = 'Vivo Y20'
-                                userbot = Client(
-                                    ":userbot:",
-                                    api_id=API_ID,
-                                    api_hash=API_HASH,
-                                    device_model=device,
-                                    session_string=session
-                                )
-                                await userbot.start()
-                            except Exception as e:
-                                userbot = None
-                        else:
-                            userbot = None
-                        msg = await app.send_message(message.chat.id, f"Processing...")
-                        await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-                        await pin_msg.edit_text(
-                        f"Batch process started ⚡\n__Processing: {i - cs + 1}/{cl}__\n\n**__Powered by Slayber__**",
-                        reply_markup=keyboard
-                        )
-                except Exception as e:
-                    print(f"Error processing link {url}: {e}")
-                    continue
-                    
-        if not any(prefix in start_id for prefix in ['t.me/c/', 't.me/b/']):
-            await set_interval(user_id, interval_minutes=20)
-            await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
-            await pin_msg.edit_text(
-                        f"Batch process completed for {cl} messages enjoy 🌝\n\n**__Powered by Slayber__**",
-                        reply_markup=keyboard
-            )
-            return
-
-        # SECOND ITERATION: Process t.me/+ or t.me/c/ links with userbot
-        data = await db.get_data(user_id)
-        if data and data.get("session"):
-            session = data.get("session")
-            device = 'Vivo Y20'
-            userbot = Client(
-                ":userbot:",
-                api_id=API_ID,
-                api_hash=API_HASH,
-                device_model=device,
-                session_string=session
-            )
-            await userbot.start()
-        else:
-            await app.send_message(message.chat.id, "Login in bot first ...")
-            return
-
-        try:
-            for i in range(cs, cs + cl):
-                if user_id in users_loop and users_loop[user_id]:
-                    try:
-                        # Construct the link
-                        x = start_id.split('/')
-                        y = x[:-1]
-                        result = '/'.join(y)
-                        url = f"{result}/{i}"
-                        link = get_link(url)
-                        # Process links requiring userbot
-                        if 't.me/b/' in link or 't.me/c/' in link:
-                            msg = await app.send_message(message.chat.id, f"Processing...")
-                            await process_and_upload_link(userbot, user_id, msg.id, link, 0, message)
-                            await pin_msg.edit_text(
-                            f"Batch process started ⚡\n__Processing: {i - cs + 1}/{cl}__\n\n**__Powered by Slayber__**",
-                            reply_markup=keyboard
-                            )
-                    except Exception as e:
-                        print(f"Error processing link {url}: {e}")
-                        continue
-        finally:
-            if userbot.is_connected:
-                await userbot.stop()
-
-        await app.send_message(message.chat.id, "Batch completed successfully! 🎉")
-        await set_interval(user_id, interval_minutes=20)
-        await pin_msg.edit_text(
-                        f"Batch completed for {cl} messages ⚡\n\n**__Powered by Slayber__**",
-                        reply_markup=keyboard
-        )
-    except FloodWait as fw:
-        await app.send_message(
-            message.chat.id,
-            f"Try again after {fw.x} seconds due to floodwait from Telegram."
-        )
-    except Exception as e:
-        await app.send_message(message.chat.id, f"Error: {str(e)}")
-    finally:
-        users_loop.pop(user_id, None)
-    
-
-@app.on_message(filters.command("cancel"))
-async def stop_batch(_, message):
-    user_id = message.chat.id
-
-    # Check if there is an active batch process for the user
-    if user_id in users_loop and users_loop[user_id]:
-        users_loop[user_id] = False  # Set the loop status to False
-        await app.send_message(
-            message.chat.id, 
-            "Batch processing has been stopped successfully. You can start a new batch now if you want."
-        )
-    elif user_id in users_loop and not users_loop[user_id]:
-        await app.send_message(
-            message.chat.id, 
-            "The batch process was already stopped. No active batch to cancel."
-        )
-    else:
-        await app.send_message(
-            message.chat.id, 
-            "No active batch processing is running to cancel."
-        )
+ 
+ 
+@app.on_message(filters.command("help"))
+async def help(client, message):
+    join = await subscribe(client, message)
+    if join == 1:
+        return
+ 
+     
+    await send_or_edit_help_page(client, message, 0)
+ 
+ 
+@app.on_callback_query(filters.regex(r"help_(prev|next)_(\d+)"))
+async def on_help_navigation(client, callback_query):
+    action, page_number = callback_query.data.split("_")[1], int(callback_query.data.split("_")[2])
+ 
+    if action == "prev":
+        page_number -= 1
+    elif action == "next":
+        page_number += 1
+ 
+     
+    await send_or_edit_help_page(client, callback_query.message, page_number)
+ 
+     
+    await callback_query.answer()
+ 
+ 
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+ 
+@app.on_message(filters.command("terms") & filters.private)
+async def terms(client, message):
+    terms_text = (
+        "> 📜 **Terms and Conditions** 📜\n\n"
+        "✨ We are not responsible for user deeds, and we do not promote copyrighted content. If any user engages in such activities, it is solely their responsibility.\n"
+        "✨ Upon purchase, we do not guarantee the uptime, downtime, or the validity of the plan. __Authorization and banning of users are at our discretion; we reserve the right to ban or authorize users at any time.__\n"
+        "✨ Payment to us **__does not guarantee__** authorization for the /batch command. All decisions regarding authorization are made at our discretion and mood.\n"
+    )
+     
+    buttons = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📋 See Plans", callback_data="see_plan")],
+            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/MustfeekNo1")],
+        ]
+    )
+    await message.reply_text(terms_text, reply_markup=buttons)
+ 
+ 
+@app.on_message(filters.command("plan") & filters.private)
+async def plan(client, message):
+    plan_text = (
+        "> 💰 **Premium Price**:\n\n Starting from $2 or 200 INR accepted via **__Amazon Gift Card__** (terms and conditions apply).\n"
+        "📥 **Download Limit**: Users can download up to 100,000 files in a single batch command.\n"
+        "🛑 **Batch**: You will get two modes /bulk and /batch.\n"
+        "   - Users are advised to wait for the process to automatically cancel before proceeding with any downloads or uploads.\n\n"
+        "📜 **Terms and Conditions**: For further details and complete terms and conditions, please send /terms.\n"
+    )
+     
+    buttons = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📜 See Terms", callback_data="see_terms")],
+            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/MustfeekNo1")],
+        ]
+    )
+    await message.reply_text(plan_text, reply_markup=buttons)
+ 
+ 
+@app.on_callback_query(filters.regex("see_plan"))
+async def see_plan(client, callback_query):
+    plan_text = (
+        "> 💰**Premium Price**\n\n Starting from $2 or 200 INR accepted via **__Amazon Gift Card__** (terms and conditions apply).\n"
+        "📥 **Download Limit**: Users can download up to 100,000 files in a single batch command.\n"
+        "🛑 **Batch**: You will get two modes /bulk and /batch.\n"
+        "   - Users are advised to wait for the process to automatically cancel before proceeding with any downloads or uploads.\n\n"
+        "📜 **Terms and Conditions**: For further details and complete terms and conditions, please send /terms or click See Terms👇\n"
+    )
+     
+    buttons = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📜 See Terms", callback_data="see_terms")],
+            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/MustfeekNo1")],
+        ]
+    )
+    await callback_query.message.edit_text(plan_text, reply_markup=buttons)
+ 
+ 
+@app.on_callback_query(filters.regex("see_terms"))
+async def see_terms(client, callback_query):
+    terms_text = (
+        "> 📜 **Terms and Conditions** 📜\n\n"
+        "✨ We are not responsible for user deeds, and we do not promote copyrighted content. If any user engages in such activities, it is solely their responsibility.\n"
+        "✨ Upon purchase, we do not guarantee the uptime, downtime, or the validity of the plan. __Authorization and banning of users are at our discretion; we reserve the right to ban or authorize users at any time.__\n"
+        "✨ Payment to us **__does not guarantee__** authorization for the /batch command. All decisions regarding authorization are made at our discretion and mood.\n"
+    )
+     
+    buttons = InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton("📋 See Plans", callback_data="see_plan")],
+            [InlineKeyboardButton("💬 Contact Now", url="https://t.me/MustfeekNo1")],
+        ]
+    )
+    await callback_query.message.edit_text(terms_text, reply_markup=buttons)
+ 
+ 
