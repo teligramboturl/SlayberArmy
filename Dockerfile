@@ -11,9 +11,9 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip3 install --upgrade pip wheel && \
     pip3 install --no-cache-dir -r requirements.txt
+
 COPY . .
 
 EXPOSE 5000
 
-# Run bot only (Flask optional)
 CMD ["python3", "-m", "devgagan"]
