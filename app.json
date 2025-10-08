@@ -33,12 +33,12 @@
     },    
     "FREEMIUM_LIMIT": {
       "description": "Batch size for free users",
-      "value": "0",
+      "value": "500",
       "required": true
     },
     "PREMIUM_LIMIT": {
       "description": "Batch size for premium users",
-      "value": "500",
+      "value": "5000",
       "required": true
     },
     "STRING": {
